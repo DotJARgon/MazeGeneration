@@ -45,6 +45,31 @@ public final class Maze {
 		}
 		return bi;
 	}
+	public BufferedImage generateImage(final int thickness) {
+		
+		if(thickness < 3) return generateImage(3);
+		
+		BufferedImage bi = new BufferedImage(W*thickness, H*thickness, BufferedImage.TYPE_INT_RGB);
+		Graphics2D g = (Graphics2D) bi.getGraphics();
+		g.setColor(Color.BLACK);
+		g.fillRect(0, 0, W*thickness, H*thickness);
+		g.setColor(Color.RED);
+		for(Node n : map.keySet()) {
+			if(!n.hasL()) {
+				g.fillRect(n.l.x*thickness+1, n.y*thickness+1, thickness*2-2, thickness-2);
+			}
+			if(!n.hasR()) {
+				g.fillRect(n.x*thickness+1, n.y*thickness+1, thickness*2-2, thickness-2);
+			}
+			if(!n.hasU()) {
+				g.fillRect(n.x*thickness+1, n.y*thickness+1, thickness-2, thickness*2-2);
+			}
+			if(!n.hasD()) {
+				g.fillRect(n.x*thickness+1, n.d.y*thickness+1, thickness-2, thickness*2-2);
+			}
+		}
+		return bi;
+	}
 	
 	public void generatePath() {
 		Node start = new Node(x, y);
@@ -54,7 +79,7 @@ public final class Maze {
 			
 			//the below is if u are ever curious of the progress, just uncomment if u want it
 			
-//			System.out.println(((map.size()) / ((double) W*H))*100 + "% finished"); 
+			System.out.println(((map.size()) / ((double) W*H))*100 + "% finished"); 
 			
 			Node n; //this variable is used in a funny way below to both instantiate and store and use as a reference
 			        //It's actually a fun trick where you can do func(n = new Node); which will first instantiate then pass the reference
@@ -70,40 +95,54 @@ public final class Maze {
 					.filter(node -> !node.isSurrounded())//filter for only nodes that are not surrounded
 					.collect(Collectors.toList());       //collect this into a list
 			
-			for(Node node : nodes) {
-				ArrayList<Setter> potentialSetters = new ArrayList<>();
-				ArrayList<Node> potentialNodes = new ArrayList<>();
+			for(Node currNode : nodes) {
 				
-				/**
-				 * we are actually using lambdas to make the code simpler and easier to 
-				 * pick a random side to apply a new side to! I just love lambdas, they make life so much easier :3
-				**/
-				if(node.x > 0 && !map.containsKey(n = new Node(node.x-1, node.y)) && node.hasL()) { 
-					potentialNodes.add(n);
-					potentialSetters.add(node::setL);
-				}
-				if(node.x < W-1 && !map.containsKey(n = new Node(node.x+1, node.y)) && node.hasR())  { 
-					potentialNodes.add(n);
-					potentialSetters.add(node::setR);
-				}
-				if(node.y > 0 && !map.containsKey(n = new Node(node.x, node.y-1)) && node.hasD()) { 
-					potentialNodes.add(n);
-					potentialSetters.add(node::setD);
-				}
-				if(node.y < H-1 && !map.containsKey(n = new Node(node.x, node.y+1)) && node.hasU()) { 
-					potentialNodes.add(n);
-					potentialSetters.add(node::setU);
-				}
+				boolean canAdd = true;
 				
-				if(potentialSetters.size() > 0) { //it has available slots nearby
-					int rand = (int) (Math.random() * potentialSetters.size()); //pick a random one
-
-					potentialSetters.get(rand).set(potentialNodes.get(rand)); //then give our node this new node (will be used for drawing)
+				Node node = currNode;
+				
+				//So we basically are worming our way along the space really fast
+				//Once we find a new node, we follow that node and continue, which makes this super fast too, and much more natural
+				while(canAdd) {
+					ArrayList<Setter> potentialSetters = new ArrayList<>();
+					ArrayList<Node> potentialNodes = new ArrayList<>();
+					canAdd = false;
 					
-					map.put(potentialNodes.get(rand), potentialNodes.get(rand)); //then add new node to map
-				}
-				else { //doesn't, so mark surrouned
-					node.markSurrounded();
+					/**
+					 * we are actually using lambdas to make the code simpler and easier to 
+					 * pick a random side to apply a new side to! I just love lambdas, they make life so much easier :3
+					**/
+					if(node.x > 0 && !map.containsKey(n = new Node(node.x-1, node.y)) && node.hasL()) { 
+						potentialNodes.add(n);
+						potentialSetters.add(node::setL);
+					}
+					if(node.x < W-1 && !map.containsKey(n = new Node(node.x+1, node.y)) && node.hasR())  { 
+						potentialNodes.add(n);
+						potentialSetters.add(node::setR);
+					}
+					if(node.y > 0 && !map.containsKey(n = new Node(node.x, node.y-1)) && node.hasD()) { 
+						potentialNodes.add(n);
+						potentialSetters.add(node::setD);
+					}
+					if(node.y < H-1 && !map.containsKey(n = new Node(node.x, node.y+1)) && node.hasU()) { 
+						potentialNodes.add(n);
+						potentialSetters.add(node::setU);
+					}
+					
+					if(potentialSetters.size() > 0) { //it has available slots nearby
+						int rand = (int) (Math.random() * potentialSetters.size()); //pick a random one
+
+						potentialSetters.get(rand).set(potentialNodes.get(rand)); //then give our node this new node (will be used for drawing)
+						
+						map.put(potentialNodes.get(rand), potentialNodes.get(rand)); //then add new node to map
+						canAdd = true;
+						
+						//then switch node to this new node to follow path
+						node = potentialNodes.get(rand);
+					}
+					else { //doesn't, so mark surrouned
+						node.markSurrounded();
+					}
 				}
 					
 				

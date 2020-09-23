@@ -10,9 +10,9 @@ import javax.swing.JPanel;
 public class MazeMain {
 
 	public static void main(String[] args) {
-		Maze maze = new Maze(0, 0, 500, 500);
+		Maze maze = new Maze(0, 0, 4096 , 2160 );
 		maze.generatePath();
-		BufferedImage bi = maze.generateImage();
+		BufferedImage bi = maze.generateImage(3);
 		
 		JFrame frame = new JFrame();
 		frame.setTitle("Maze Demo Using HashMap<K, V>");
